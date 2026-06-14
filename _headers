@@ -1,0 +1,12 @@
+# Cloudflare Pages headers
+# Camera access needs an explicit Permissions-Policy or some browsers block it
+# even over HTTPS. MindAR also needs cross-origin isolation off (default).
+/*
+  Permissions-Policy: camera=(self)
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# .mind target files have no standard MIME type; serve as binary.
+/targets/*
+  Content-Type: application/octet-stream
+  Cache-Control: public, max-age=31536000, immutable

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#0B0B0B" />
+  <title>NON</title>
+
+  <!-- A-Frame + MindAR (image tracking). Pinned versions for reproducible builds. -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ===================== First screen: permission gate ===================== -->
+  <!-- Minimal. White logotype on dark, one line of instruction, one tap. -->
+  <section id="gate" class="screen">
+    <div class="gate-inner">
+      <h1 class="logotype">NON</h1>
+      <p id="gate-instruction" class="instruction">
+        Point your camera at the label.
+      </p>
+      <button id="gate-button" class="tap-target" type="button">
+        Tap to begin
+      </button>
+      <p id="gate-error" class="error" hidden></p>
+    </div>
+  </section>
+
+  <!-- ===================== Hints overlaid on the camera ====================== -->
+  <div id="hint-scanning" class="hint" hidden>Looking for the label…</div>
+  <div id="hint-lost" class="hint" hidden>Bring the label back into view…</div>
+
+  <!-- ===================== Layer controls (bottom) =========================== -->
+  <!-- Built/labelled by app.js once a SKU is known. Large, one-handed. -->
+  <nav id="controls" class="controls" hidden aria-label="Experience layers">
+    <button class="layer-btn" data-layer="art" type="button">Art</button>
+    <button class="layer-btn" data-layer="story" type="button">Story</button>
+    <button class="layer-btn" data-layer="pairing" type="button">Pairing</button>
+  </nav>
+
+  <!-- SKU name, quietly shown once detected. -->
+  <div id="sku-label" class="sku-label" hidden></div>
+
+  <!-- The MindAR <a-scene> is injected here by app.js once we know which
+       target file to load (single-target fast path vs combined fallback). -->
+  <div id="ar-root"></div>
+
+  <!-- Content model first, then scenes, then app logic. -->
+  <script src="config.js"></script>
+  <script src="scenes/registry.js"></script>
+  <script src="scenes/placeholder.js"></script>
+  <script src="scenes/non1.js"></script>
+  <!-- Add further per-SKU scene scripts here as they are built. -->
+  <script src="app.js"></script>
+</body>
+</html>
