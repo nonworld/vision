@@ -61,8 +61,9 @@ npx cloudflared tunnel --url http://localhost:3000
 
 Open the generated `https://…trycloudflare.com/?sku=NON1` on the phone.
 
-> Note: you won't get a "target found" until a real `.mind` file exists in
-> `/targets` (see below). Until then the gate screen and camera still work.
+> All six `.mind` targets are compiled and committed (from the AUS label master
+> print), so detection works as soon as you point a real camera at a printed
+> label. To rebuild them, see "Compile targets" below.
 
 ## File structure
 
@@ -76,21 +77,32 @@ non-ar/
     registry.js     art-scene registry
     placeholder.js  quiet default art for un-built SKUs
     non1.js         NON1 brand-world art (reference implementation)
-  /targets          compiled .mind files (see targets/README.md)
+  /targets          compiled .mind files + src/ label images (see its README)
+  /tools            target compiler (Node primary + browser fallback)
   /assets/<sku>     per-SKU textures / models / audio
   _headers          Cloudflare Pages headers (camera permission, caching)
 ```
 
-## Compile a new label into a `.mind` target
+## Compile targets (`.mind`)
 
-Full instructions and the **required label order** for the combined file are in
-[`targets/README.md`](targets/README.md). In short:
+The six single-target files and the combined `non-all.mind` are already in
+`/targets`. To rebuild them (e.g. after new label artwork):
 
-1. Open the MindAR compiler: https://hiukim.github.io/mind-ar-js-doc/tools/compile
-2. Drop in a high-contrast, detail-rich, flat crop of the label artwork.
-3. Export `non<N>.mind` (single SKU) and/or rebuild `non-all.mind` (all six, in
-   order: NON1, NON2, NON3, NON5, NON7, NON9).
-4. Drop the file into `/targets` and redeploy.
+**Primary — Node, ~25s for the whole set:**
+
+```bash
+cd tools
+npm install        # uses @napi-rs/canvas (prebuilt, no system libs needed)
+npm run compile    # reads targets/src/*.png → writes targets/*.mind
+```
+
+**Fallback — browser, no Node:** open `tools/compile.html` over the dev server
+and click *Compile all + download*, then move the files into `/targets`.
+
+To add a brand-new label: drop its artwork into `targets/src/<sku>.png`, add the
+SKU to `ORDER` in `tools/compile-targets.mjs` (and to `combinedOrder` /
+`targetIndex` in `config.js`), then recompile. The **required label order** and a
+note on the duplicate NON9 artwork are in [`targets/README.md`](targets/README.md).
 
 ## Add / edit a SKU
 

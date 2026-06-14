@@ -1,39 +1,65 @@
 # Image targets (`.mind`)
 
-This folder holds the compiled MindAR image-target files. They are **not** in the
-repo as binaries you can edit — you compile them from the label artwork.
+Compiled MindAR image-target files **and their source images** live here.
 
-Expected files:
+| File             | Contents                                                    |
+| ---------------- | ----------------------------------------------------------- |
+| `non1.mind` …    | Single target per SKU. Fast `?sku=NON1` path.               |
+| `non-all.mind`   | Combined file, all six labels, for the no-param detection fallback. |
+| `src/<sku>.png`  | The label artwork each target was compiled from.            |
 
-| File              | Contents                                              |
-| ----------------- | ----------------------------------------------------- |
-| `non1.mind`       | Single target — NON1 label. Fast `?sku=NON1` path.    |
-| `non2.mind` …     | One single-target file per SKU.                       |
-| `non-all.mind`    | Combined file, all six labels, used by the no-param detection fallback. |
+These were generated from `NON-AUS-LABEL-MASTER-PRINT.pdf` and are committed and
+working. Regenerate any time with the compiler in [`../tools`](../tools).
 
 ## Compiler input order matters
 
-`non-all.mind` must be compiled with the labels in **exactly** this order, because
+`non-all.mind` is compiled with the labels in **exactly** this order, because
 `config.js` maps each label to a `targetIndex`:
 
 ```
 0: NON1   1: NON2   2: NON3   3: NON5   4: NON7   5: NON9
 ```
 
-If you change the order, update `combinedOrder` and every `targetIndex` in
-`config.js` to match.
+Change the order → update `combinedOrder` and every `targetIndex` in `config.js`,
+and `ORDER` in `tools/compile-targets.mjs`, to match.
 
-## How to compile
+## Source-image mapping (from the master print)
 
-Use MindAR's browser-based image compiler (no install):
+`src/<sku>.png` are renders of these front-label pages in the master PDF:
 
-1. Open https://hiukim.github.io/mind-ar-js-doc/tools/compile
-2. Drag in the label image(s). Use a high-contrast, feature-rich, flat crop of
-   the label artwork at print resolution — the more distinct detail, the better
-   the tracking.
-3. For a **single-SKU** file, drop one image and export as `non1.mind`.
-4. For the **combined** file, drop all six in the order above and export as
-   `non-all.mind`.
-5. Drop the exported file into this folder and redeploy.
+| SKU  | Flavour                        | PDF page | Format    |
+| ---- | ------------------------------ | -------- | --------- |
+| NON1 | Salted Raspberry & Chamomile   | 1        | Sparkling |
+| NON2 | Caramelised Pear & Kombu       | 3        | Sparkling |
+| NON3 | Toasted Cinnamon & Yuzu        | 5        | Still     |
+| NON5 | Lemon Marmalade & Hibiscus     | 9        | Sparkling |
+| NON7 | Stewed Cherry & Coffee         | 13       | Sparkling |
+| NON9 | Oaked Blackberry & Plum        | 17       | Still     |
 
-Tip: aim for label crops ≥ 512px on the short edge, even lighting, no glare.
+> ⚠️ **NON9 caveat.** The master print contains **two** "Oaked Blackberry & Plum"
+> artworks: an older one numbered **4** ("BLACKBERRIES, PINE NEEDLES…") and the
+> current one numbered **9** ("BLACKBERRIES, **FIR** PINE NEEDLES…"). We used the
+> **9 / FIR** version. If the artwork is revised, recompile from the correct page.
+>
+> The master also includes SKUs outside this build's six (Tomato Water & Basil,
+> and an apple SKU). They're ignored here.
+
+The `src/*.png` are 480px renders — fine for MindAR tracking of these bold,
+high-contrast labels. Re-render larger from the PDF if you ever want denser
+feature points (the compiler handles bigger images, just slower).
+
+## Recompile
+
+**Primary (Node, ~25s for the whole set):**
+
+```bash
+cd ../tools
+npm install
+npm run compile
+```
+
+**Fallback (browser, no Node):** open `../tools/compile.html` over the dev
+server and click *Compile all + download*, then drop the files here.
+
+See [`../tools`](../tools) and the project README for details, and the MindAR
+browser compiler at https://hiukim.github.io/mind-ar-js-doc/tools/compile.

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NON — target compiler</title>
+  <style>
+    body { font-family: Helvetica, Arial, sans-serif; background:#0b0b0b; color:#fff; padding:24px; }
+    pre  { white-space:pre-wrap; font-size:13px; }
+  </style>
+</head>
+<body>
+  <h1>NON target compiler</h1>
+  <p>Zero-install fallback. The fast/primary compiler is the Node tool —
+     <code>cd tools &amp;&amp; npm install &amp;&amp; npm run compile</code>. Use this page
+     only if you can't run Node. (Compiling here is CPU-bound and slow in some
+     browsers — give it a minute per file.)</p>
+  <p>
+    <button id="btn-all" type="button">Compile all + download</button>
+  </p>
+  <pre id="status">loading…</pre>
+
+  <!-- MindAR 1.2.5 ships its image build as an ES module, so import it as one.
+       The Compiler runs the feature extraction entirely in-browser. -->
+  <script type="module">
+    import { Compiler } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js';
+
+    /* In-browser MindAR compiler harness. Produces a .mind buffer per SKU (and a
+     * combined file) and stashes them as base64 on window so they can be read
+     * out (head-less, via preview_eval) and written to /targets. Reusable: open
+     * this page in any browser and call the functions from the console.
+     *
+     *   await compileOne('non1')      -> window.__mind.non1     (base64)
+     *   await compileCombined(order)  -> window.__mind.combined  (base64)
+     */
+    window.__mind = {};
+    window.__status = { state: 'idle', detail: '' };
+
+    function setStatus(state, detail) {
+      window.__status = { state, detail: detail || '' };
+      document.getElementById('status').textContent = state + (detail ? ' — ' + detail : '');
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('img load failed: ' + src));
+        img.src = src;
+      });
+    }
+
+    function toBase64(uint8) {
+      let s = '';
+      const chunk = 0x8000;
+      for (let i = 0; i < uint8.length; i += chunk) {
+        s += String.fromCharCode.apply(null, uint8.subarray(i, i + chunk));
+      }
+      return btoa(s);
+    }
+
+    async function compileImages(images, tag) {
+      const compiler = new Compiler();
+      await compiler.compileImageTargets(images, (p) => {
+        setStatus('compiling:' + tag, Math.round(p) + '%');
+      });
+      const buffer = await compiler.exportData(); // Uint8Array
+      return toBase64(buffer);
+    }
+
+    window.compileOne = async function (sku) {
+      setStatus('compiling:' + sku, 'loading image');
+      const img = await loadImage('../targets/src/' + sku + '.png');
+      window.__mind[sku] = await compileImages([img], sku);
+      setStatus('done:' + sku, window.__mind[sku].length + ' b64 chars');
+      return true;
+    };
+
+    window.compileCombined = async function (order) {
+      setStatus('compiling:combined', 'loading images');
+      const imgs = [];
+      for (const sku of order) imgs.push(await loadImage('../targets/src/' + sku + '.png'));
+      window.__mind.combined = await compileImages(imgs, 'combined');
+      setStatus('done:combined', window.__mind.combined.length + ' b64 chars');
+      return true;
+    };
+
+    // Sequential driver: all six singles then the combined file. Poll
+    // window.__run to follow along head-lessly; results land in window.__mind.
+    window.__run = { step: 'idle', done: [], error: null };
+    window.compileAll = async function (order) {
+      try {
+        for (const sku of order) {
+          window.__run.step = sku;
+          await window.compileOne(sku);
+          window.__run.done.push(sku);
+        }
+        window.__run.step = 'combined';
+        await window.compileCombined(order);
+        window.__run.done.push('combined');
+        window.__run.step = 'finished';
+      } catch (e) {
+        window.__run.error = (e && e.stack) ? e.stack : String(e);
+        window.__run.step = 'error';
+      }
+    };
+
+    // Trigger a browser download of a base64 .mind buffer.
+    function download(name, b64) {
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('btn-all').addEventListener('click', async () => {
+      const order = ['non1', 'non2', 'non3', 'non5', 'non7', 'non9'];
+      for (const sku of order) { await window.compileOne(sku); download(sku + '.mind', window.__mind[sku]); }
+      await window.compileCombined(order); download('non-all.mind', window.__mind.combined);
+      setStatus('finished', 'all files downloaded — move them into /targets');
+    });
+
+    setStatus('ready', 'Compiler loaded — click the button, or call compileOne(sku) / compileCombined(order)');
+  </script>
+</body>
+</html>

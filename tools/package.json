@@ -1,0 +1,14 @@
+{
+  "name": "non-ar-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Compile NON label artwork into MindAR .mind target files.",
+  "scripts": {
+    "compile": "node compile-targets.mjs"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.44",
+    "mind-ar": "1.2.5"
+  }
+}
