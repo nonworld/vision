@@ -40,8 +40,32 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--non-dark);
+  /* Production photo as the gate background; dark base shows through until the
+     image loads (or if it's absent), so the screen never looks broken. */
+  background: var(--non-dark) 42% center / cover no-repeat;
+  background-image: url("assets/gate-bg.jpg");
   transition: opacity 0.5s ease;
+}
+/* Scrim: a centre vignette plus a vertical wash so the photo reads as a moody
+   backdrop and the white logotype / instruction stay clean over the busy label. */
+.screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 80% 55% at 50% 46%,
+      rgba(11, 11, 11, 0.66) 0%,
+      rgba(11, 11, 11, 0.4) 55%,
+      rgba(11, 11, 11, 0.2) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(11, 11, 11, 0.6) 0%,
+      rgba(11, 11, 11, 0.4) 38%,
+      rgba(11, 11, 11, 0.82) 100%
+    );
+  pointer-events: none;
 }
 .screen.hide {
   opacity: 0;
@@ -49,18 +73,23 @@ body {
 }
 
 .gate-inner {
+  position: relative; /* above the scrim */
+  z-index: 1;
   text-align: center;
   padding: 0 32px;
   max-width: 420px;
 }
 
 .logotype {
-  font-weight: 700;
-  font-size: 56px;
-  letter-spacing: 0.18em;
   margin: 0 0 28px;
-  /* logotype sits slightly inset from optical centre */
-  padding-left: 0.18em;
+}
+.logotype svg {
+  display: block;
+  width: 168px;
+  height: auto;
+  margin: 0 auto;
+  /* subtle lift so the wordmark reads cleanly over the photo */
+  filter: drop-shadow(0 2px 16px rgba(0, 0, 0, 0.45));
 }
 
 .instruction {
